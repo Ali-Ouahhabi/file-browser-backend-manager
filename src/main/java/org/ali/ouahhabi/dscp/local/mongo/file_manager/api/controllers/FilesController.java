@@ -5,10 +5,41 @@
  */
 package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.controllers;
 
+import ch.qos.logback.core.net.ObjectWriter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.PostConstruct;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.daos.FileSet;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.FileModel;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.services.FilesService;
+import org.apache.tomcat.util.json.JSONParser;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.mongodb.gridfs.GridFsResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,36 +49,70 @@ import org.springframework.web.multipart.MultipartFile;
  * @author Ali Ouahhabi
  */
 @RestController
+@CrossOrigin
 @RequestMapping("${api.prefix}/files")
 public class FilesController {
+    
+    private FilesService filesService;
 
-    @RequestMapping("/dowlnload/${file_id}")
-    public void download(@PathVariable("file_id") String fileId) {
-        throw new org.springframework.web.server.MediaTypeNotSupportedStatusException("not implemented");
+    @Autowired
+    public FilesController(FilesService filesService) {
+        this.filesService = filesService;
+    }
+    
+    @GetMapping("/list")
+    public Map<String,String> listAll(){
+        return this.filesService.findAll();
     }
 
+    @RequestMapping("/download/{file_id}")
+    public ResponseEntity<InputStreamResource> download(@PathVariable("file_id") String fileId) {
+        try {
+            GridFsResource resp = this.filesService.download(fileId);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.valueOf(resp.getOptions().getMetadata().get("type", String.class)))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resp.getFilename() + "\"")
+                    .body(new InputStreamResource(resp.getInputStream()));
+        } catch (IOException ex) {
+            Logger.getLogger(FilesController.class.getName()).log(Level.SEVERE, null, ex);
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    
     @RequestMapping("/dowlnload")
     public void download(@RequestBody Map<String, String[]> fileId) {
         throw new org.springframework.web.server.MediaTypeNotSupportedStatusException("not implemented");
     }
 
-    @RequestMapping("/upload")
-    public void upload(@RequestPart("files") MultipartFile[] files) {
-        throw new org.springframework.web.server.MediaTypeNotSupportedStatusException("not implemented");
+    @RequestMapping(value = "/uploads", method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON_VALUE,consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+            //, consumes = )
+    public ResponseEntity upload(
+            @RequestPart(value = "files") MultipartFile[] files,
+            @RequestPart(value = "metadata") FileModel [] metadata) throws IOException {
+  
+        try {
+            return new ResponseEntity<>(this.filesService.upload(files, metadata), HttpStatus.OK);
+        } catch (Exception ex) {
+            Logger.getLogger(FilesController.class.getName()).log(Level.SEVERE, null, ex);
+             return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    @RequestMapping("/rename/${file_id}/${to_name}")
+    @RequestMapping("/rename/{file_id}/{to_name}")
     public void rename(@PathVariable("file_id") String fileId, @PathVariable("to_name") String name) {
         throw new org.springframework.web.server.MediaTypeNotSupportedStatusException("not implemented");
     }
 
-    @RequestMapping("/move/${file_id}")
+    @RequestMapping(value = "/move/{file_id}", method = RequestMethod.PUT)
     public void move(@PathVariable("file_id") String fileId, @RequestPart("path") String[] files) {
         throw new org.springframework.web.server.MediaTypeNotSupportedStatusException("not implemented");
     }
 
-    @RequestMapping("/remove/${file_id}")
+    @RequestMapping(value = "/remove/{file_id}", method = RequestMethod.PUT)
     public void remove(@PathVariable("file_id") String fileId) {
         throw new org.springframework.web.server.MediaTypeNotSupportedStatusException("not implemented");
     }
+    
 }
