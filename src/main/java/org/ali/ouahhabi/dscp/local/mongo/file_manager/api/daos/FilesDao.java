@@ -9,7 +9,9 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
+import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.GridFSFindIterable;
+import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -22,6 +24,7 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.gridfs.GridFsResource;
 
 /**
  *
@@ -39,39 +42,43 @@ public class FilesDao {
     }
 
     public ObjectId upload(InputStream in, GridFSUploadOptions options) throws Exception {
-        if (!options.getMetadata().containsKey("filename")
+        if (!options.getMetadata().containsKey("name")
                 || !options.getMetadata().containsKey("path")
-                || !options.getMetadata().containsKey("ancestors")) {
+                || !options.getMetadata().containsKey("size")
+                || !options.getMetadata().containsKey("type")) {
             throw new Exception("Metadata must include filename path ancestors ");
         }
-        return gridFSBucket.uploadFromStream(options.getMetadata().get("filename", String.class), in, options);
+        return gridFSBucket.uploadFromStream(options.getMetadata().get("name", String.class), in, options);
     }
 
-    public OutputStream download(ObjectId fileId) throws FileNotFoundException, IOException {
-        OutputStream output = new FileOutputStream(fileId.toHexString());
-        gridFSBucket.downloadToStream(fileId, output);
-        output.close();
-        return output;
+    public GridFsResource download(GridFSFile file) throws FileNotFoundException, IOException {
+        OutputStream output = new FileOutputStream(file.getFilename());
+        GridFSDownloadStream gridFSDownloadStream = gridFSBucket.openDownloadStream(file.getId());
+        GridFsResource gridFsResource = new GridFsResource(file, gridFSDownloadStream);
+
+        return gridFsResource;
     }
 
-    public void findByName(String name) {
-        GridFSFindIterable resp = gridFSBucket.find(eq("metadata.filename", name));
+    public GridFSFile findByName(String name) {
+        return gridFSBucket.find(eq("metadata.filename", name)).iterator().tryNext();
+    }
+
+    public GridFSFile findByID(ObjectId fileId) {
+        return gridFSBucket.find(eq("_id", fileId)).iterator().tryNext();
+
+    }
+    
+    public GridFSFindIterable findAll(){
+        return gridFSBucket.find();
+    }
+
+    public GridFSFile findDescendent(String[] path) {
+        return gridFSBucket.find(eq("metadata.path", path)).iterator().tryNext();
 
     }
 
-    public void findByID(ObjectId fileId) {
-        GridFSFindIterable resp = gridFSBucket.find(eq("_id", fileId));
-
-    }
-
-    public void findDescendent(String[] path) {
-        GridFSFindIterable resp = gridFSBucket.find(eq("metadata.ancestors", path));
-
-    }
-
-    public void findByPath(String[] ancestors, String path) {
-        GridFSFindIterable resp = gridFSBucket.find(and(eq("metadata.ancestors", ancestors), eq("metadata.path", path)));
-
+    public GridFSFindIterable findByPath(String[] path, String name) {
+        return gridFSBucket.find(and(eq("metadata.path", path), eq("metadata.name", name)));
     }
 
     public void rename(ObjectId fileId, String name) {
