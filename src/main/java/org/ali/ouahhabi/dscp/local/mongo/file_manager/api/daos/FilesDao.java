@@ -13,6 +13,7 @@ import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.GridFSFindIterable;
 import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
+import com.mongodb.client.model.Filters;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import java.io.FileNotFoundException;
@@ -24,6 +25,7 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.core.aggregation.ArrayOperators;
 import org.springframework.data.mongodb.gridfs.GridFsResource;
 
 /**
@@ -65,6 +67,11 @@ public class FilesDao {
 
     public GridFSFile findByID(ObjectId fileId) {
         return gridFSBucket.find(eq("_id", fileId)).iterator().tryNext();
+
+    }
+    
+    public GridFSFindIterable findByID(ObjectId []fileId) {
+        return gridFSBucket.find(Filters.in("_id", fileId));
 
     }
     
