@@ -105,7 +105,7 @@ public class FilesService {
                 ZipEntry zipEntry = new ZipEntry(srcFile.getFilename());
                 zipOut.putNextEntry(zipEntry);
             } catch (Exception e) {
-                ZipEntry zipEntry = new ZipEntry(srcFile.getFilename()+"_0");
+                ZipEntry zipEntry = new ZipEntry("0_"+srcFile.getFilename());
                 zipOut.putNextEntry(zipEntry);
             }
 
