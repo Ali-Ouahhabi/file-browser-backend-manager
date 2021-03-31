@@ -7,7 +7,7 @@ package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authenticati
 
 import java.util.Collection;
 import java.util.List;
-import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.User;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 

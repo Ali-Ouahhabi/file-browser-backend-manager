@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models;
+package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models;
 
 /**
  *

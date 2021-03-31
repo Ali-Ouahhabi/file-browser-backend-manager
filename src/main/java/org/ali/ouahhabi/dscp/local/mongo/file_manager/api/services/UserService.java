@@ -5,9 +5,9 @@
  */
 package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.services;
 
-import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.daos.UserDao;
-import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.User;
-import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.UserRegister;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.dao.UserDao;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.User;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.UserRegister;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.UsernamePasswordAuthentication;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.services.TokenAuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;

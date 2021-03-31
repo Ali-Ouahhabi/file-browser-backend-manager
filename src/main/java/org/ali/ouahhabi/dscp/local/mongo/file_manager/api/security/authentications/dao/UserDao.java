@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.daos;
+package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.dao;
 
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -11,8 +11,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
-import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.User;
-import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.UserRegister;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.User;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.UserRegister;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.Session;
 import org.bson.Document;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
