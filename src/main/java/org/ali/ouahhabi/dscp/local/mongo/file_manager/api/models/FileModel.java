@@ -6,14 +6,13 @@
 package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models;
 
 import org.bson.codecs.pojo.annotations.BsonProperty;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
  * @author Ali Ouahhabi
  */
 public class FileModel {
-    
+
     @BsonProperty(value = "path")
     private String path;
     @BsonProperty(value = "lastModified")
@@ -26,11 +25,13 @@ public class FileModel {
     private Long size;
     @BsonProperty(value = "type")
     private String type;
+    @BsonProperty(value = "userId")
+    private String userId;
 
     public FileModel() {
     }
 
-    public FileModel( String path, Long lastModified, String lastModifiedDate, String name, Long size, String type) {
+    public FileModel(String path, Long lastModified, String lastModifiedDate, String name, Long size, String type) {
         this.path = path;
         this.lastModified = lastModified;
         this.lastModifiedDate = lastModifiedDate;
@@ -38,8 +39,6 @@ public class FileModel {
         this.size = size;
         this.type = type;
     }
-    
-   
 
     public String getPath() {
         return path;
@@ -88,5 +87,13 @@ public class FileModel {
     public void setType(String type) {
         this.type = type;
     }
-    
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
 }
