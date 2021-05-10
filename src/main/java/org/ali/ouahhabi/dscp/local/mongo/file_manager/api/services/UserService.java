@@ -45,10 +45,11 @@ public class UserService {
         UserRegister user_ = new UserRegister(user);
         user_.setPassword(passwordEncoder.encode(user.getPassword()));
         user_.setRole("USER");
-        return userDao.addUser(user);
+        return userDao.addUser(user_);
     }
     
     public String authenticate(User user) throws Exception{
+        System.out.println("Authenricate userService user: "+user.toString());
         Authentication upa = new UsernamePasswordAuthentication(user.getEmail(), user.getPassword());
         upa = authenticationManager.authenticate(upa);
         String jwt = tokenAuthenticationService.generateToken(upa);

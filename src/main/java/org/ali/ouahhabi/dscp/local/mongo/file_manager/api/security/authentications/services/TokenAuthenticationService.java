@@ -5,14 +5,13 @@
  */
 package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.services;
 
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import static java.util.Collections.emptyList;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,7 @@ import org.springframework.stereotype.Service;
  *
  * @author Ali Ouahhabi
  */
-@Service
+@Configuration
 public class TokenAuthenticationService {
 
     private final String TOKEN_PREFIX = "Bearer";
@@ -63,6 +62,10 @@ public class TokenAuthenticationService {
     }
     
     public Authentication getAuthentication(HttpServletRequest request) {
+        System.out.println("#######################################");
+        System.out.println("#######################################");
+        System.out.println("#######################################");
+        System.out.println("#######################################");
         String token = request.getHeader(HEADER_STRING);
         if (token != null) return getAuthenticationUser(token);
         return null;

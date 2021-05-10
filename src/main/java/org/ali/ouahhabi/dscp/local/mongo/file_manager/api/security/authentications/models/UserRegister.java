@@ -17,6 +17,9 @@ public class UserRegister {
     private String password;
     private String role;
 
+    public UserRegister() {
+    }
+
     public UserRegister(UserRegister user) {
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
@@ -63,4 +66,10 @@ public class UserRegister {
         this.password = password;
     }
 
+    @Override
+    public String toString() {
+        return this.email+":"+this.password; //To change body of generated methods, choose Tools | Templates.
+    }
+
+    
 }

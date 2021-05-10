@@ -5,7 +5,9 @@
  */
 package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.daos;
 
+import ch.qos.logback.core.filter.Filter;
 import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
@@ -13,10 +15,14 @@ import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.GridFSFindIterable;
 import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
 import static com.mongodb.client.model.Filters.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,11 +38,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class FilesDao {
 
     private GridFSBucket gridFSBucket;
+    private MongoCollection<Document> filesCollection;
+
 
     @Autowired
-    FilesDao(MongoClient mongoClient, @Value("${spring.mongodb.database}") String database, SecurityContextHolder securityContextHolder) {
+    FilesDao(MongoClient mongoClient, @Value("${spring.mongodb.database}") String database) {
         MongoDatabase myDatabase = mongoClient.getDatabase(database);
         gridFSBucket = GridFSBuckets.create(myDatabase);
+        filesCollection = myDatabase.getCollection("fs.files");
+
     }
 
     public ObjectId upload(InputStream in, GridFSUploadOptions options) throws Exception {
@@ -97,6 +107,17 @@ public class FilesDao {
 
     public GridFSFindIterable findByPath(String[] path, String name) {
         return gridFSBucket.find(and(eq("metadata.path", path), eq("metadata.name", name)));
+    }
+
+    public GridFSFindIterable findByPath(String userId) {
+        filesCollection.aggregate(
+        Arrays.asList(new Document("$match", 
+    new Document("metadata.userId", "tyu")), 
+    new Document("$group", 
+    new Document("_id", "$metadata.path")
+            .append("files", 
+    new Document("$push", "$$ROOT"))))
+        )
     }
 
     public void rename(ObjectId fileId, String name) {

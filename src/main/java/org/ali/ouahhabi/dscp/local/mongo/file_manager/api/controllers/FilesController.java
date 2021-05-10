@@ -86,8 +86,7 @@ public class FilesController {
         }
     }
 
-    //*********************************************************************************************
-    //*****************************************************************|///////////////////////////
+
     @RequestMapping(value = "/dowlnload", method = RequestMethod.POST )
     public  ResponseEntity download(@RequestBody String [] fileId) {
         try {
@@ -122,7 +121,9 @@ public class FilesController {
     public ResponseEntity upload(
             @RequestPart(value = "files") MultipartFile[] files,
             @RequestPart(value = "metadata") FileModel[] metadata) throws IOException {
-
+            System.out.println("@@@@@@@@@@@@@@@@@@@@222");
+            System.out.println("@@@@@@@@@@@@@@@@@@@@222");
+            System.out.println("@@@@@@@@@@@@@@@@@@@@222");
         try {
             return new ResponseEntity<>(this.filesService.upload(files, metadata), HttpStatus.OK);
         } catch (Exception ex) {

@@ -34,7 +34,6 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
          UserDetails user = new UserDetailsImplementation(userDao.getUser(authentication.getName()));
-         
          if(passwordEncoder.matches((String)authentication.getCredentials(), user.getPassword())){
 
              return new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword(), user.getAuthorities());

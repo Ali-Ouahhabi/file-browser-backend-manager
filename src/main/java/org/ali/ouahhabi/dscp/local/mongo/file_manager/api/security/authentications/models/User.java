@@ -15,7 +15,7 @@ public class User {
     private String role;
     private String password;
 
-    public User(String email, String role, String password) {
+    public User(String email, String password, String role) {
         this.email = email;
         this.role = role;
         this.password = password;
@@ -43,6 +43,11 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return this.email+":"+this.password; //To change body of generated methods, choose Tools | Templates.
     }
     
     

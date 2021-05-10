@@ -57,11 +57,11 @@ public class UserDao {
     }
 
     public boolean addUser(UserRegister user) throws Exception {
-        if (getUser(user.getEmail()) != null) {
+        if (getUser(user.getEmail()) == null) {
             usersCollection.find();
             InsertOneResult insertOne = usersCollection.insertOne(user);
             return insertOne.wasAcknowledged();
-        }else{
+        } else {
             throw new Exception("user email alerady exist");
         }
     }
@@ -69,7 +69,11 @@ public class UserDao {
     public User getUser(String email) {
         Document filter = new Document("email", email);
         UserRegister user = usersCollection.find(filter).iterator().tryNext();
-        return new User(user.getEmail(), user.getPassword(), user.getRole());
+        if (user != null) {
+            return new User(user.getEmail(), user.getPassword(), user.getRole());
+        } else {
+            return null;
+        }
     }
 
     public boolean createUserSession(String userId, String jwt) {
@@ -79,7 +83,7 @@ public class UserDao {
         sessionsCollection.insertOne(userSession);
         return true;
     }
-    
+
     public Session getUserSession(String userId) {
         Document filter = new Document("user_id", userId);
         Document result = sessionsCollection.find(filter).iterator().tryNext();
@@ -88,7 +92,7 @@ public class UserDao {
         }
         return null;
     }
-    
+
     private Session getSessionFromDocument(Document doc) {
         Session session = new Session();
         session.setUserId(doc.getString("user_id"));
