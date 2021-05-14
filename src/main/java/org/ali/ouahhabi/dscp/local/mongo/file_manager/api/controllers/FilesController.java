@@ -47,8 +47,8 @@ public class FilesController {
     }
 
     @GetMapping("/list")
-    public Map<String, String> listAll() {
-        return this.filesService.findAll();
+    public ResponseEntity<String> listAll() {
+        return ResponseEntity.ok(this.filesService.findAll());
     }
 
     @RequestMapping("/download/{file_id}")

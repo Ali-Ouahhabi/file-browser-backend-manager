@@ -84,11 +84,10 @@ public class FilesService {
         return zipFiles(files);
     }
 
-    public Map<String, String> findAll() {
-        GridFSFindIterable result = this.filesDao.findAll();
-        Map<String, String> resp = new HashMap<>();
-        result.forEach(f -> resp.put(f.getId().asObjectId().getValue().toHexString(), f.getFilename()));
-        return resp;
+    public String findAll() {
+    	String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String result = this.filesDao.initUserFiles(UserId);
+        return result;
     }
 
     private File zipFiles(GridFSFindIterable files) throws FileNotFoundException, IOException {
