@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,17 +46,37 @@ public class FilesController {
     public FilesController(FilesService filesService) {
         this.filesService = filesService;
     }
+    
+    @RequestMapping("/move")
+    public ResponseEntity<Boolean> move(@RequestBody Map<String, String> body){
+    	String name = body.get("name");
+    	String from = body.get("from");
+    	String to = body.get("to");
+    	return ResponseEntity.ok(this.filesService.move(name, from, to));
+    }
 
     @GetMapping("/list")
     public ResponseEntity<String> listAll() {
         return ResponseEntity.ok(this.filesService.findAll());
     }
+    @RequestMapping(value = "/download")
+    public ResponseEntity download(@RequestBody Map<String,String> body) {
+    	boolean isFile = body.get("isFile").equals("true")?true:false;
+    	System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11");
+    	System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11");
+    	System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11");
+    	System.out.println("isFile "+body.get("isFile")+" to "+isFile);
+    	String name = (String) body.get("name");
+    	String path = (String) body.get("path");
+    	if(isFile) return this.downloadOne(path, name);
+    	else return this.downloadAll(path,name);
+    } 
 
-    @RequestMapping("/download/{file_id}")
-    public ResponseEntity<InputStreamResource> download(@PathVariable("file_id") String fileId) {
+    private ResponseEntity<InputStreamResource> downloadOne(String path, String name) {
+    	
         try {
 
-            GridFsResource resp = this.filesService.download(fileId);
+            GridFsResource resp = this.filesService.downloadOne(path, name);
 
             return ResponseEntity
                     .ok()
@@ -67,10 +88,10 @@ public class FilesController {
                                                     .getMetadata()
                                                     .get("type", String.class)
                                     )
-                    )
+                    ).header("Access-Control-Expose-Headers", HttpHeaders.CONTENT_DISPOSITION)
                     .header(
                             HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + resp.getFilename() + "\""
+                            resp.getFilename() 
                     )
                     .body(
                             new InputStreamResource(
@@ -87,20 +108,21 @@ public class FilesController {
     }
 
 
-    @RequestMapping(value = "/dowlnload", method = RequestMethod.POST )
-    public  ResponseEntity download(@RequestBody String [] fileId) {
-        try {
 
-            File resp = this.filesService.download(fileId);
+    private  ResponseEntity downloadAll(String path, String name) {
+        try {
+        	//FIXME instead of fileId use UserId and path+filename
+            File resp = this.filesService.downloadAll(path);
 
             return ResponseEntity
                     .ok()
                     .contentType(
                             MediaType.valueOf("application/zip")
                     )
+                    .header("Access-Control-Expose-Headers", HttpHeaders.CONTENT_DISPOSITION)
                     .header(
                             HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + resp.getName() + "\""
+                            name+ ".zip"
                     )
                     .body(
                             new InputStreamResource(
@@ -121,9 +143,6 @@ public class FilesController {
     public ResponseEntity upload(
             @RequestPart(value = "files") MultipartFile[] files,
             @RequestPart(value = "metadata") FileModel[] metadata) throws IOException {
-            System.out.println("@@@@@@@@@@@@@@@@@@@@222");
-            System.out.println("@@@@@@@@@@@@@@@@@@@@222");
-            System.out.println("@@@@@@@@@@@@@@@@@@@@222");
         try {
             return new ResponseEntity<>(this.filesService.upload(files, metadata), HttpStatus.OK);
         } catch (Exception ex) {
@@ -137,10 +156,6 @@ public class FilesController {
         throw new org.springframework.web.server.MediaTypeNotSupportedStatusException("not implemented");
     }
 
-    @RequestMapping(value = "/move/{file_id}", method = RequestMethod.PUT)
-    public void move(@PathVariable("file_id") String fileId, @RequestPart("path") String[] files) {
-        throw new org.springframework.web.server.MediaTypeNotSupportedStatusException("not implemented");
-    }
 
     @RequestMapping(value = "/remove/{file_id}", method = RequestMethod.PUT)
     public void remove(@PathVariable("file_id") String fileId) {

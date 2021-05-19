@@ -47,6 +47,11 @@ public class FilesService {
     FilesService(FilesDao filesDao) {
         this.filesDao = filesDao;
     }
+    
+    public boolean move(String name, String from, String to) {
+    	String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    	return this.filesDao.move(UserId, name, from, to);
+    }
 
     public List<String> upload(MultipartFile[] files, FileModel[] metadata) throws Exception {
         ObjectMapper ow = new ObjectMapper();
@@ -67,19 +72,14 @@ public class FilesService {
         return index;
     }
 
-    public GridFsResource download(String fileId) throws IOException {
+    public GridFsResource downloadOne(String path, String name ) throws IOException {
         String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return this.filesDao.download(this.filesDao.findByID(new ObjectId(fileId),userId));
+        return this.filesDao.download(this.filesDao.findByPathAndName(path,name,userId));
     }
 
-    public File download(String[] fileId) throws IOException {
+    public File downloadAll(String path) throws IOException {
         String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        ObjectId[] re = new ObjectId[fileId.length];
-        List<ObjectId> fids = Stream.of(fileId).map((t) -> {
-            return new ObjectId(t); //To change body of generated lambdas, choose Tools | Templates.
-        }).collect(Collectors.toList());
-        fids.toArray(re);
-        GridFSFindIterable files = this.filesDao.findByID(re,userId);
+        GridFSFindIterable files = this.filesDao.findByPath(path,userId);
 
         return zipFiles(files);
     }

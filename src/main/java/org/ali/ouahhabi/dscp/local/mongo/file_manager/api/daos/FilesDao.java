@@ -14,6 +14,8 @@ import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.GridFSFindIterable;
 import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
+import com.mongodb.client.model.Updates;
+
 import static com.mongodb.client.model.Filters.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,6 +24,7 @@ import java.util.Arrays;
 
 import org.bson.BsonNull;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +36,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  * @author Ali Ouahhabi
  */
+//TODO clean to the necessary needed
 @Configuration
 public class FilesDao {
 
@@ -86,9 +90,14 @@ public class FilesDao {
 
 	}
 
-	public GridFSFindIterable findByPath(String[] path, String name) {
-		return gridFSBucket.find(and(eq("metadata.path", path), eq("metadata.name", name)));
+	public GridFSFindIterable findByPath(String path, String userId) {
+		return gridFSBucket.find(and(regex("metadata.path", "^"+path), eq("metadata.userId", userId)));
 	}
+	
+	public GridFSFile findByPathAndName(String path, String name, String userId) {
+		return gridFSBucket.find(and(eq("metadata.path", path), eq("metadata.name", name), eq("metadata.userId", userId))).iterator().next();
+	}
+	
 
 	public String initUserFiles(String userId) {
 		return filesCollection
@@ -121,7 +130,30 @@ public class FilesDao {
 		gridFSBucket.delete(fileId);
 	}
 
-	public void move(ObjectId fileId, String[] path) {
+	public boolean move(String userId,String name,String from, String to) {
 		// get fs.file and set upadate
+		Bson filter;
+		if(name != null) {
+			filter = and(
+					eq("metadata.userId",userId),
+					eq("metadata.name",name),
+					regex("metadata.path", "^"+from)
+					);
+		}else {
+			filter = and(
+					eq("metadata.userId",userId),
+					regex("metadata.path", "^"+from)
+					);
+		}
+		
+		return filesCollection.updateMany(
+				filter, 
+				Arrays.asList(new Document("$set", 
+					    new Document("metadata.path", 
+					    new Document("$replaceOne", 
+					    new Document("input", "$metadata.path")
+					                    .append("find", from)
+					                    .append("replacement", to)))))
+				).wasAcknowledged();
 	}
 }
