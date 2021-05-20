@@ -41,84 +41,101 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class FilesService {
 
-    private final FilesDao filesDao;
+	private final FilesDao filesDao;
 
-    @Autowired
-    FilesService(FilesDao filesDao) {
-        this.filesDao = filesDao;
-    }
-    
-    public boolean move(String name, String from, String to) {
-    	String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    	return this.filesDao.move(UserId, name, from, to);
-    }
+	@Autowired
+	FilesService(FilesDao filesDao) {
+		this.filesDao = filesDao;
+	}
 
-    public List<String> upload(MultipartFile[] files, FileModel[] metadata) throws Exception {
-        ObjectMapper ow = new ObjectMapper();
-        String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<GridFSUploadOptions> options = List
-                .of(metadata)
-                .stream()
-                .map(m -> {
-                    m.setUserId(UserId);
-                    return new GridFSUploadOptions().metadata(ow.convertValue(m, Document.class));
-                })
-                .collect(Collectors.toList());
-        List<String> index = new ArrayList<>();
-        for (int i = 0; i < options.size(); i++) {
-            index.add(filesDao.upload(files[i].getInputStream(), options.get(i)).toHexString());
-        }
-        index.forEach(System.out::println);
-        return index;
-    }
+	public void removeFile(String path, String name) throws IOException {
+		String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		this.filesDao.removeFile(path, name, userId);
+	}
 
-    public GridFsResource downloadOne(String path, String name ) throws IOException {
-        String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return this.filesDao.download(this.filesDao.findByPathAndName(path,name,userId));
-    }
+	public void removeFolder(String path) throws IOException {
+		String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		this.filesDao.removeFolder(path, userId);
+	}
 
-    public File downloadAll(String path) throws IOException {
-        String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        GridFSFindIterable files = this.filesDao.findByPath(path,userId);
+	public boolean move(String name, String from, String to) {
+		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		return this.filesDao.move(UserId, name, from, to);
+	}
 
-        return zipFiles(files);
-    }
+	public List<String> upload(MultipartFile[] files, FileModel[] metadata) throws Exception {
+		ObjectMapper ow = new ObjectMapper();
+		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		List<GridFSUploadOptions> options = List.of(metadata).stream().map(m -> {
+			m.setUserId(UserId);
+			return new GridFSUploadOptions().metadata(ow.convertValue(m, Document.class));
+		}).collect(Collectors.toList());
+		List<String> index = new ArrayList<>();
+		for (int i = 0; i < options.size(); i++) {
+			index.add(filesDao.upload(files[i].getInputStream(), options.get(i)).toHexString());
+		}
+		index.forEach(System.out::println);
+		return index;
+	}
 
-    public String findAll() {
-    	String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String result = this.filesDao.initUserFiles(UserId);
-        return result;
-    }
+	public GridFsResource downloadOne(String path, String name) throws IOException {
+		String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		return this.filesDao.download(this.filesDao.findByPathAndName(path, name, userId));
+	}
 
-    private File zipFiles(GridFSFindIterable files) throws FileNotFoundException, IOException {
+	public File downloadAll(String path) throws IOException {
+		String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		GridFSFindIterable files = this.filesDao.findByPath(path, userId);
 
-        Path tempFile = Files.createTempFile("compressesd", ".zip");
+		return zipFiles(files);
+	}
 
-        FileOutputStream fos = new FileOutputStream(tempFile.toFile());
-        ZipOutputStream zipOut = new ZipOutputStream(fos);
-        GridFsResource fsResource;
-        for (GridFSFile srcFile : files) {
-            fsResource = this.filesDao.download(srcFile);
+	public String findAll() {
+		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String result = this.filesDao.initUserFiles(UserId);
+		return result;
+	}
 
-            InputStream fis = fsResource.getInputStream();
-            try {
-                ZipEntry zipEntry = new ZipEntry(srcFile.getFilename());
-                zipOut.putNextEntry(zipEntry);
-            } catch (Exception e) {
-                ZipEntry zipEntry = new ZipEntry("0_"+srcFile.getFilename());
-                zipOut.putNextEntry(zipEntry);
-            }
+	private File zipFiles(GridFSFindIterable files) throws FileNotFoundException, IOException {
 
-            byte[] bytes = new byte[1024];
-            int length;
-            while ((length = fis.read(bytes)) >= 0) {
-                zipOut.write(bytes, 0, length);
-            }
-            fis.close();
-        }
-        zipOut.close();
-        fos.close();
+		Path tempFile = Files.createTempFile("compressesd", ".zip");
 
-        return tempFile.toFile();
-    }
+		FileOutputStream fos = new FileOutputStream(tempFile.toFile());
+		ZipOutputStream zipOut = new ZipOutputStream(fos);
+		GridFsResource fsResource;
+		for (GridFSFile srcFile : files) {
+			fsResource = this.filesDao.download(srcFile);
+
+			InputStream fis = fsResource.getInputStream();
+			try {
+				ZipEntry zipEntry = new ZipEntry(srcFile.getFilename());
+				zipOut.putNextEntry(zipEntry);
+			} catch (Exception e) {
+				ZipEntry zipEntry = new ZipEntry("0_" + srcFile.getFilename());
+				zipOut.putNextEntry(zipEntry);
+			}
+
+			byte[] bytes = new byte[1024];
+			int length;
+			while ((length = fis.read(bytes)) >= 0) {
+				zipOut.write(bytes, 0, length);
+			}
+			fis.close();
+		}
+		zipOut.close();
+		fos.close();
+
+		return tempFile.toFile();
+	}
+
+	public boolean renameFile(String path, String name, String newName) {
+		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		return filesDao.renameFile(path, name, newName, UserId);
+	}
+
+	public boolean renameFolder(String path, String newPath) {
+		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		return filesDao.renameFolder(path, newPath, UserId);
+	}
+
 }

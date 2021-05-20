@@ -17,6 +17,8 @@ import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import com.mongodb.client.model.Updates;
 
 import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Projections.*;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,13 +123,57 @@ public class FilesDao {
 				.cursor().tryNext().toJson();
 	}
 
-	public void rename(ObjectId fileId, String name) {
-		gridFSBucket.rename(fileId, "mongodbTutorial");
+	public boolean renameFile(String path, String name, String newName, String userId) {
+		Bson filter;
+		filter = and(
+				eq("metadata.userId",userId),
+				eq("metadata.name",name),
+				eq("metadata.path", path)
+				);
+		return filesCollection.updateOne(filter, new Document("metadata.name",newName)).wasAcknowledged();
+
+	}
+	
+	public boolean renameFolder(String path, String newPath, String userId) {
+		Bson filter = and(
+				eq("metadata.userId",userId),
+				regex("metadata.path", "^"+path)
+				);
+		return filesCollection.updateMany(
+				filter, 
+				Arrays.asList(new Document("$set", 
+					    new Document("metadata.path", 
+					    new Document("$replaceOne", 
+					    new Document("input", "$metadata.path")
+					                    .append("find", path)
+					                    .append("replacement", newPath)))))
+				).wasAcknowledged();
 
 	}
 
-	public void delete(ObjectId fileId) {
-		gridFSBucket.delete(fileId);
+	public void removeFile(String path, String name, String userId) {
+		Bson filter;
+			filter = and(
+					eq("metadata.userId",userId),
+					eq("metadata.name",name),
+					eq("metadata.path", path)
+					);
+		
+		ObjectId id = filesCollection.find(filter).projection(include("_id")).iterator().tryNext().getObjectId("_id");
+
+		gridFSBucket.delete(id);
+	}
+	
+	public void removeFolder(String path, String userId)  {
+		Bson filter;
+		filter = and(
+				eq("metadata.userId",userId),
+				regex("metadata.path", "^"+path)
+				);
+		filesCollection.find(filter).projection(include("_id")).forEach((doc)->{
+			gridFSBucket.delete(doc.getObjectId("_id"));
+		});;
+		
 	}
 
 	public boolean move(String userId,String name,String from, String to) {
