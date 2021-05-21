@@ -62,10 +62,6 @@ public class TokenAuthenticationService {
     }
     
     public Authentication getAuthentication(HttpServletRequest request) {
-        System.out.println("#######################################");
-        System.out.println("#######################################");
-        System.out.println("#######################################");
-        System.out.println("#######################################");
         String token = request.getHeader(HEADER_STRING);
         if (token != null) return getAuthenticationUser(token);
         return null;

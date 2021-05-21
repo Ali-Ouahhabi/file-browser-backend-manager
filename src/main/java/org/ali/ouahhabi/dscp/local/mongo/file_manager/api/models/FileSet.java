@@ -3,9 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.daos;
+package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models;
 
-import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.FileModel;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 /**

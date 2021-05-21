@@ -37,8 +37,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 /**
  *
  * @author Ali Ouahhabi
+ * @email ali.ohhb@gmail.com
  */
-//TODO clean to the necessary needed
+
+
 @Configuration
 public class FilesDao {
 
@@ -51,6 +53,19 @@ public class FilesDao {
 		gridFSBucket = GridFSBuckets.create(myDatabase);
 		filesCollection = myDatabase.getCollection("fs.files");
 
+	}
+
+	public String initUserFiles(String userId) {
+		return filesCollection
+				.aggregate(Arrays.asList(new Document("$match", new Document("metadata.userId", userId)),
+						new Document("$group",
+								new Document("_id", "$metadata.path").append("files",
+										new Document("$push", new Document("id", "$_id").append("filename", "$filename")
+												.append("uploadDate", "$uploadDate").append("metadata", "$metadata")))),
+						new Document("$sort", new Document("_id", 1L)),
+						new Document("$group",
+								new Document("_id", new BsonNull()).append("all", new Document("$push", "$$ROOT")))))
+				.cursor().tryNext().toJson();
 	}
 
 	public ObjectId upload(InputStream in, GridFSUploadOptions options) throws Exception {
@@ -69,6 +84,66 @@ public class FilesDao {
 		return gridFsResource;
 	}
 
+	public boolean renameFile(String path, String name, String newName, String userId) {
+		Bson filter;
+		filter = and(eq("metadata.userId", userId), eq("metadata.name", name), eq("metadata.path", path));
+		return filesCollection.updateOne(filter, new Document("$set", new Document("metadata.name", newName)))
+				.wasAcknowledged();
+
+	}
+
+	public boolean renameFolder(String path, String newPath, String userId) {
+		Bson filter = and(eq("metadata.userId", userId), regex("metadata.path", "^" + path));
+		return filesCollection
+				.updateMany(filter,
+						Arrays.asList(new Document("$set",
+								new Document("metadata.path",
+										new Document("$replaceOne", new Document("input", "$metadata.path")
+												.append("find", path).append("replacement", newPath))))))
+				.wasAcknowledged();
+
+	}
+	
+	public boolean move(String userId, String name, String from, String to) {
+		// get fs.file and set upadate
+		Bson filter;
+		if (name != null) {
+			filter = and(eq("metadata.userId", userId), eq("metadata.name", name), regex("metadata.path", "^" + from));
+		} else {
+			filter = and(eq("metadata.userId", userId), regex("metadata.path", "^" + from));
+		}
+
+		return filesCollection
+				.updateMany(filter,
+						Arrays.asList(
+								new Document("$set",
+										new Document("metadata.path",
+												new Document("$replaceOne", new Document("input", "$metadata.path")
+														.append("find", from).append("replacement", to))))))
+				.wasAcknowledged();
+	}
+
+	public void removeFile(String path, String name, String userId) {
+		Bson filter;
+		filter = and(eq("metadata.userId", userId), eq("metadata.name", name), eq("metadata.path", path));
+
+		ObjectId id = filesCollection.find(filter).projection(include("_id")).iterator().tryNext().getObjectId("_id");
+
+		gridFSBucket.delete(id);
+	}
+
+	public void removeFolder(String path, String userId) {
+		Bson filter;
+		filter = and(eq("metadata.userId", userId), regex("metadata.path", "^" + path));
+		filesCollection.find(filter).projection(include("_id")).forEach((doc) -> {
+			gridFSBucket.delete(doc.getObjectId("_id"));
+		});
+		;
+
+	}
+
+	
+	
 	public GridFSFile findByName(String name) {
 		return gridFSBucket.find(eq("metadata.filename", name)).iterator().tryNext();
 	}
@@ -93,113 +168,13 @@ public class FilesDao {
 	}
 
 	public GridFSFindIterable findByPath(String path, String userId) {
-		return gridFSBucket.find(and(regex("metadata.path", "^"+path), eq("metadata.userId", userId)));
+		return gridFSBucket.find(and(regex("metadata.path", "^" + path), eq("metadata.userId", userId)));
 	}
-	
+
 	public GridFSFile findByPathAndName(String path, String name, String userId) {
-		return gridFSBucket.find(and(eq("metadata.path", path), eq("metadata.name", name), eq("metadata.userId", userId))).iterator().next();
-	}
-	
-
-	public String initUserFiles(String userId) {
-		return filesCollection
-				.aggregate(Arrays.asList(new Document("$match", 
-					    new Document("metadata.userId", userId)), 
-					    new Document("$group", 
-					    new Document("_id", "$metadata.path")
-					            .append("files", 
-					    new Document("$push", 
-					    new Document("id", "$_id")
-					                    .append("filename", "$filename")
-					                    .append("uploadDate", "$uploadDate")
-					                    .append("metadata", "$metadata")))), 
-					    new Document("$sort", 
-					    new Document("_id", 1L)), 
-					    new Document("$group", 
-					    new Document("_id", 
-					    new BsonNull())
-					            .append("all", 
-					    new Document("$push", "$$ROOT")))))
-				.cursor().tryNext().toJson();
+		return gridFSBucket
+				.find(and(eq("metadata.path", path), eq("metadata.name", name), eq("metadata.userId", userId)))
+				.iterator().next();
 	}
 
-	public boolean renameFile(String path, String name, String newName, String userId) {
-		Bson filter;
-		filter = and(
-				eq("metadata.userId",userId),
-				eq("metadata.name",name),
-				eq("metadata.path", path)
-				);
-		return filesCollection.updateOne(filter, new Document("metadata.name",newName)).wasAcknowledged();
-
-	}
-	
-	public boolean renameFolder(String path, String newPath, String userId) {
-		Bson filter = and(
-				eq("metadata.userId",userId),
-				regex("metadata.path", "^"+path)
-				);
-		return filesCollection.updateMany(
-				filter, 
-				Arrays.asList(new Document("$set", 
-					    new Document("metadata.path", 
-					    new Document("$replaceOne", 
-					    new Document("input", "$metadata.path")
-					                    .append("find", path)
-					                    .append("replacement", newPath)))))
-				).wasAcknowledged();
-
-	}
-
-	public void removeFile(String path, String name, String userId) {
-		Bson filter;
-			filter = and(
-					eq("metadata.userId",userId),
-					eq("metadata.name",name),
-					eq("metadata.path", path)
-					);
-		
-		ObjectId id = filesCollection.find(filter).projection(include("_id")).iterator().tryNext().getObjectId("_id");
-
-		gridFSBucket.delete(id);
-	}
-	
-	public void removeFolder(String path, String userId)  {
-		Bson filter;
-		filter = and(
-				eq("metadata.userId",userId),
-				regex("metadata.path", "^"+path)
-				);
-		filesCollection.find(filter).projection(include("_id")).forEach((doc)->{
-			gridFSBucket.delete(doc.getObjectId("_id"));
-		});;
-		
-	}
-
-	public boolean move(String userId,String name,String from, String to) {
-		// get fs.file and set upadate
-		Bson filter;
-		if(name != null) {
-			filter = and(
-					eq("metadata.userId",userId),
-					eq("metadata.name",name),
-					regex("metadata.path", "^"+from)
-					);
-		}else {
-			filter = and(
-					eq("metadata.userId",userId),
-					regex("metadata.path", "^"+from)
-					);
-		}
-		
-		return filesCollection.updateMany(
-				filter, 
-				Arrays.asList(new Document("$set", 
-					    new Document("metadata.path", 
-					    new Document("$replaceOne", 
-					    new Document("input", "$metadata.path")
-					                    .append("find", from)
-					                    .append("replacement", to)))))
-				).wasAcknowledged();
-	}
 }

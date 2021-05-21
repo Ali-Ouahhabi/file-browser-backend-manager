@@ -8,10 +8,15 @@ package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.controllers;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.FileModel;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.request.DownloadReq;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.request.MoveReq;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.request.RemoveReq;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.models.request.RenameReq;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.services.FilesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -23,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -34,7 +40,10 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  *
  * @author Ali Ouahhabi
+ * @email ali.ohhb@gmail.com
  */
+
+
 @RestController
 @CrossOrigin
 @RequestMapping("${api.prefix}/files")
@@ -47,50 +56,58 @@ public class FilesController {
 		this.filesService = filesService;
 	}
 
-	@RequestMapping("/remove")
-	public ResponseEntity<String> remove(@RequestBody Map<String, String> body) {
-		boolean isFile = body.get("isFile").equals("true") ? true : false;
-		String name = (String) body.get("name");
-		String path = (String) body.get("path");
-
-		try {
-			if (isFile)
-				this.filesService.removeFile(path, name);
-			else
-				this.filesService.removeFolder(path);
-			return ResponseEntity.ok("true");
-		} catch (IOException e) {
-			
-			return ResponseEntity.ok(e.getMessage());
-		}
-
-	}
-
-	@RequestMapping("/move")
-	public ResponseEntity<Boolean> move(@RequestBody Map<String, String> body) {
-		String name = body.get("name");
-		String from = body.get("from");
-		String to = body.get("to");
-		return ResponseEntity.ok(this.filesService.move(name, from, to));
-	}
-
 	@GetMapping("/list")
 	public ResponseEntity<String> listAll() {
 		return ResponseEntity.ok(this.filesService.findAll());
 	}
 
-	@RequestMapping(value = "/download")
-	public ResponseEntity download(@RequestBody Map<String, String> body) {
-
-		boolean isFile = body.get("isFile").equals("true") ? true : false;
-		String name = (String) body.get("name");
-		String path = (String) body.get("path");
-		if (isFile)
-			return this.downloadOne(path, name);
+	@RequestMapping(value = "/uploads", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	// , consumes = )
+	public ResponseEntity<String>upload(@RequestPart(value = "files") MultipartFile[] files,
+			@RequestPart(value = "metadata") FileModel[] metadata) throws IOException {
+		try {
+			return new ResponseEntity<String>(this.filesService.upload(files, metadata), HttpStatus.OK);
+		} catch (Exception ex) {
+			Logger.getLogger(FilesController.class.getName()).log(Level.SEVERE, null, ex);
+			return new ResponseEntity<String>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+	
+	@PostMapping("/download")
+	public ResponseEntity<InputStreamResource> download(@RequestBody DownloadReq req) {
+		if (req.isFile())
+			return this.downloadOne(req.getPath(), req.getName());
 		else
-			return this.downloadAll(path, name);
+			return this.downloadAll(req.getPath(), req.getName());
 	}
 
+	@PostMapping("/rename")
+	public ResponseEntity<Boolean> rename(@RequestBody RenameReq req) {
+		if(req.isFile()) 
+			return ResponseEntity.ok(filesService.renameFile(req.getPath(),req.getName(),req.getNewName()));
+		return ResponseEntity.ok(filesService.renameFolder(req.getPath(),req.getNewPath()));
+	}
+	
+	@PostMapping("/move")
+	public ResponseEntity<Boolean> move(@RequestBody MoveReq req) {
+		return ResponseEntity.ok(this.filesService.move(req.getName(), req.getFrom(), req.getTo()));
+	}
+	
+	@PostMapping("/remove")
+ 	public ResponseEntity<String> remove(@RequestBody RemoveReq req) {
+		try {
+			if (req.isFile())
+				this.filesService.removeFile(req.getPath(), req.getName());
+			else
+				this.filesService.removeFolder(req.getPath());
+			return ResponseEntity.ok("true");
+		} catch (IOException e) {
+			
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
+
+	}
+	
 	private ResponseEntity<InputStreamResource> downloadOne(String path, String name) {
 
 		try {
@@ -111,9 +128,8 @@ public class FilesController {
 		}
 	}
 
-	private ResponseEntity downloadAll(String path, String name) {
+	private ResponseEntity<InputStreamResource> downloadAll(String path, String name) {
 		try {
-			// FIXME instead of fileId use UserId and path+filename
 			File resp = this.filesService.downloadAll(path);
 
 			return ResponseEntity.ok().contentType(MediaType.valueOf("application/zip"))
@@ -129,34 +145,6 @@ public class FilesController {
 		}
 	}
 
-	@RequestMapping(value = "/uploads", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	// , consumes = )
-	public ResponseEntity upload(@RequestPart(value = "files") MultipartFile[] files,
-			@RequestPart(value = "metadata") FileModel[] metadata) throws IOException {
-		try {
-			return new ResponseEntity<>(this.filesService.upload(files, metadata), HttpStatus.OK);
-		} catch (Exception ex) {
-			Logger.getLogger(FilesController.class.getName()).log(Level.SEVERE, null, ex);
-			return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
-
-	@RequestMapping("/rename")
-	public ResponseEntity<Boolean> rename(@RequestBody Map<String, String> body) {
-		boolean isFile = body.get("isFile").equals("true") ? true : false;
-		if(isFile) {
-			String name = (String) body.get("name");
-			String path = (String) body.get("path");
-			String newName = (String) body.get("newName");
-			return ResponseEntity.ok(filesService.renameFile(path,name,newName));
-		}else {
-			String path = (String) body.get("path");
-			String newPath = (String) body.get("newPath");
-			return ResponseEntity.ok(filesService.renameFolder(path,newPath));
-		}
-
-		
-	}
 
 
 }

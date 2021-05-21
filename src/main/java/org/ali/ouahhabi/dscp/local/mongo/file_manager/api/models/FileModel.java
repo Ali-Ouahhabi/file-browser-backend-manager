@@ -10,7 +10,10 @@ import org.bson.codecs.pojo.annotations.BsonProperty;
 /**
  *
  * @author Ali Ouahhabi
+ * @email ali.ohhb@gmail.com
  */
+
+
 public class FileModel {
 
     @BsonProperty(value = "path")

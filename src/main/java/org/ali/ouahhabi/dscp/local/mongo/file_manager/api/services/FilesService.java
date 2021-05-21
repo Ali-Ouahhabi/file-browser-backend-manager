@@ -37,7 +37,10 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  *
  * @author Ali Ouahhabi
+ * @email ali.ohhb@gmail.com
  */
+
+
 @Service
 public class FilesService {
 
@@ -48,52 +51,55 @@ public class FilesService {
 		this.filesDao = filesDao;
 	}
 
-	public void removeFile(String path, String name) throws IOException {
-		String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		this.filesDao.removeFile(path, name, userId);
-	}
-
-	public void removeFolder(String path) throws IOException {
-		String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		this.filesDao.removeFolder(path, userId);
-	}
-
-	public boolean move(String name, String from, String to) {
-		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		return this.filesDao.move(UserId, name, from, to);
-	}
-
-	public List<String> upload(MultipartFile[] files, FileModel[] metadata) throws Exception {
-		ObjectMapper ow = new ObjectMapper();
-		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		List<GridFSUploadOptions> options = List.of(metadata).stream().map(m -> {
-			m.setUserId(UserId);
-			return new GridFSUploadOptions().metadata(ow.convertValue(m, Document.class));
-		}).collect(Collectors.toList());
-		List<String> index = new ArrayList<>();
-		for (int i = 0; i < options.size(); i++) {
-			index.add(filesDao.upload(files[i].getInputStream(), options.get(i)).toHexString());
-		}
-		index.forEach(System.out::println);
-		return index;
-	}
-
-	public GridFsResource downloadOne(String path, String name) throws IOException {
-		String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		return this.filesDao.download(this.filesDao.findByPathAndName(path, name, userId));
-	}
-
-	public File downloadAll(String path) throws IOException {
-		String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		GridFSFindIterable files = this.filesDao.findByPath(path, userId);
-
-		return zipFiles(files);
-	}
-
 	public String findAll() {
 		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 		String result = this.filesDao.initUserFiles(UserId);
 		return result;
+	}
+
+	public String upload(MultipartFile[] files, FileModel[] metadata) throws Exception {
+
+		ObjectMapper ow = new ObjectMapper();
+
+		List<GridFSUploadOptions> options = List.of(metadata).stream().map(m -> {
+			m.setUserId(this.getUser());
+			return new GridFSUploadOptions().metadata(ow.convertValue(m, Document.class));
+		}).collect(Collectors.toList());
+
+		String index ="";
+		for (int i = 0; i < options.size(); i++) {
+			index.concat(filesDao.upload(files[i].getInputStream(), options.get(i)).toHexString()+"\n");
+		}		
+		return index;
+	}
+
+	public GridFsResource downloadOne(String path, String name) throws IOException {
+		return this.filesDao.download(this.filesDao.findByPathAndName(path, name, this.getUser()));
+	}
+
+	public File downloadAll(String path) throws IOException {
+		GridFSFindIterable files = this.filesDao.findByPath(path, this.getUser());
+		return zipFiles(files);
+	}
+
+	public boolean renameFile(String path, String name, String newName) {
+		return filesDao.renameFile(path, name, newName, this.getUser());
+	}
+
+	public boolean renameFolder(String path, String newPath) {
+		return filesDao.renameFolder(path, newPath, this.getUser());
+	}
+
+	public boolean move(String name, String from, String to) {
+		return this.filesDao.move(this.getUser(), name, from, to);
+	}
+
+	public void removeFile(String path, String name) throws IOException {
+		this.filesDao.removeFile(path, name, this.getUser());
+	}
+
+	public void removeFolder(String path) throws IOException {
+		this.filesDao.removeFolder(path, this.getUser());
 	}
 
 	private File zipFiles(GridFSFindIterable files) throws FileNotFoundException, IOException {
@@ -128,14 +134,8 @@ public class FilesService {
 		return tempFile.toFile();
 	}
 
-	public boolean renameFile(String path, String name, String newName) {
-		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		return filesDao.renameFile(path, name, newName, UserId);
-	}
-
-	public boolean renameFolder(String path, String newPath) {
-		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		return filesDao.renameFolder(path, newPath, UserId);
+	private String getUser() {
+		return (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 	}
 
 }
