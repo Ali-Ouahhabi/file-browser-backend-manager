@@ -8,7 +8,12 @@ package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.services;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.dao.UserDao;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.User;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.UserRegister;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.UsernamePasswordAuthentication;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.services.RefreshTokenAuthenticationService;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.services.TokenAuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +35,9 @@ public class UserService {
     private TokenAuthenticationService tokenAuthenticationService;
     
     @Autowired
+    private RefreshTokenAuthenticationService refreshTokenAuthenticationService;
+    
+    @Autowired
     private PasswordEncoder passwordEncoder;
     
     @Autowired
@@ -48,15 +56,22 @@ public class UserService {
         return userDao.addUser(user_);
     }
     
-    public String authenticate(User user) throws Exception{
-        System.out.println("Authenricate userService user: "+user.toString());
+    public HashMap<String,String> authenticate(User user) throws Exception{
         Authentication upa = new UsernamePasswordAuthentication(user.getEmail(), user.getPassword());
         upa = authenticationManager.authenticate(upa);
-        String jwt = tokenAuthenticationService.generateToken(upa);
-        if(userDao.createUserSession(user.getEmail(), jwt)){
-            return jwt;
+        String jwt = tokenAuthenticationService.generateToken(upa); 
+        String refresh = refreshTokenAuthenticationService.generateToken(upa);
+        if(userDao.createUserSession(user.getEmail(), refresh)){
+        	HashMap<String,String> resp = new HashMap<String, String>(2);
+        	resp.put("jwt", jwt);
+        	resp.put("refresh", refresh);
+            return resp;
         }else throw new Exception("Server Error");
     }
+    
+    public String authenticate(Authentication user) throws Exception{
+    	return tokenAuthenticationService.generateToken(user); 
+    } 
     
     public boolean logoutUser(String email) {
         return userDao.deleteUserSessions(email);

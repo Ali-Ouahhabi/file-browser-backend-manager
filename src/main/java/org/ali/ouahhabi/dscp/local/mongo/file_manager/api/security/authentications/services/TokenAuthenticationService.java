@@ -21,10 +21,11 @@ import org.springframework.stereotype.Service;
  * @author Ali Ouahhabi
  */
 @Configuration
-public class TokenAuthenticationService {
+public class TokenAuthenticationService {//TODO add generate refresh token based on different and higher expdate and secret 
 
     private final String TOKEN_PREFIX = "Bearer";
     private final String HEADER_STRING = "Authorization";
+    
     @Value("${jwtExpirationInMs}")
     private long jwtExpirationInMs;
     @Value("${jwtSecret}")

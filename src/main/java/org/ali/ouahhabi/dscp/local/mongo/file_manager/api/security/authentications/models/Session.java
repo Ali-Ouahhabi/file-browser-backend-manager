@@ -7,7 +7,7 @@ public class Session {
     @BsonProperty(value = "user_id")
     private String userId;
 
-    private String jwt;
+    private String jwt;//TODO replace by refresh token
 
     public Session() {
         super();
