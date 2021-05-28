@@ -5,6 +5,7 @@
  */
 package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.services;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.util.Date;
@@ -21,50 +22,51 @@ import org.springframework.stereotype.Service;
  * @author Ali Ouahhabi
  */
 @Configuration
-public class TokenAuthenticationService {//TODO add generate refresh token based on different and higher expdate and secret 
+public class TokenAuthenticationService {
 
-    private final String TOKEN_PREFIX = "Bearer";
-    private final String HEADER_STRING = "Authorization";
-    
-    @Value("${jwtExpirationInMs}")
-    private long jwtExpirationInMs;
-    @Value("${jwtSecret}")
-    private String jwtSecret;
+	private final String TOKEN_PREFIX = "Bearer";
+	private final String HEADER_STRING = "Authorization";
 
-    public String generateToken(Authentication authentication) {
-        String userPrincipal = (String) authentication.getPrincipal();
-        String grantedAuthority = (String) authentication
-                .getAuthorities()
-                .iterator()
-                .next()
-                .getAuthority();
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
-        return Jwts.builder()
-                .setSubject(userPrincipal + ":-:" + grantedAuthority)
-                .setIssuedAt(new Date())
-                .setExpiration(expiryDate)
-                .signWith(SignatureAlgorithm.HS512, jwtSecret)
-                .compact();
-    }
+	@Value("${jwtExpirationInMs}")
+	private long jwtExpirationInMs;
+	@Value("${jwtSecret}")
+	private String jwtSecret;
 
-    public Authentication getAuthenticationUser(String token) {
-        String[] user_authority = Jwts.parser()
-                .setSigningKey(jwtSecret)
-                .parseClaimsJws(
-                        token
-                                .replace(TOKEN_PREFIX, "")
-                                .trim()
-                )
-                .getBody()
-                .getSubject()
-                .split(":-:");
-        return new UsernamePasswordAuthenticationToken(user_authority[0], null, List.of(() -> user_authority[1]));
-    }
-    
-    public Authentication getAuthentication(HttpServletRequest request) {
-        String token = request.getHeader(HEADER_STRING);
-        if (token != null) return getAuthenticationUser(token);
-        return null;
-    }
+	public String generateToken(Authentication authentication) {
+		String userPrincipal = (String) authentication.getPrincipal();
+		String grantedAuthority = (String) authentication.getAuthorities().iterator().next().getAuthority();
+		Date now = new Date();
+		Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+		return Jwts.builder().setSubject(userPrincipal + ":-:" + grantedAuthority).setIssuedAt(new Date())
+				.setExpiration(expiryDate).signWith(SignatureAlgorithm.HS512, jwtSecret).compact();
+	}
+
+	public String[] getUserAuthority(String token) {
+		return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token.replace(TOKEN_PREFIX, "").trim()).getBody()
+				.getSubject().split(":-:");
+	}
+
+	public Authentication getAuthenticationUser(String token) {
+		String[] user_authority = getUserAuthority(token);
+		return new UsernamePasswordAuthenticationToken(user_authority[0], null, List.of(() -> user_authority[1]));
+	}
+
+	public Authentication getAuthentication(HttpServletRequest request) {
+		String token = request.getHeader(HEADER_STRING);
+		if (token != null)
+			return getAuthenticationUser(token);
+		return null;
+	}
+
+	public String getPrincipale(HttpServletRequest request) {
+		String token = request.getHeader(HEADER_STRING);
+		if (token != null)
+			try {
+				return getUserAuthority(token)[0];
+			} catch (ExpiredJwtException e) {
+				return e.getClaims().get("sub").toString().split(":-:")[0];
+			}
+		return null;
+	}
+
 }

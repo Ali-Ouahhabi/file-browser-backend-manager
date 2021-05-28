@@ -5,26 +5,21 @@
  */
 package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.controllers;
 
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.UsernamePasswordAuthentication;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.User;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.models.UserRegister;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.services.RefreshTokenAuthenticationService;
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.services.TokenAuthenticationService;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +38,9 @@ public class UserController {
 
 	@Autowired
 	private RefreshTokenAuthenticationService refreshTokenAuthenticationService;
+	
+	@Autowired
+	private TokenAuthenticationService tokenAuthenticationService;
 
 	@RequestMapping(value = "/register", method = RequestMethod.POST)
 	public ResponseEntity register(@RequestBody UserRegister user) {
@@ -68,8 +66,9 @@ public class UserController {
 	}
 
 	@RequestMapping("/logout")
-	public ResponseEntity logout(@RequestBody String email) {
-		boolean logout = userService.logoutUser(email);
+	public ResponseEntity logout(HttpServletRequest request) {
+		String email = tokenAuthenticationService.getPrincipale(request);
+		boolean logout = email != null?userService.logoutUser(email):false;
 		if (logout)
 			return ResponseEntity.ok("");
 		else
@@ -82,7 +81,6 @@ public class UserController {
 		try {
 			return ResponseEntity.ok(userService.authenticate(u));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			Logger.getLogger(UserController.class.getName()).log(Level.SEVERE, null, e);
 			return ResponseEntity.status(409).body(e.getMessage());
 		}
