@@ -29,6 +29,15 @@ jobs:
           heroku_app_name: "dscp" #Must be unique in Heroku
           heroku_email: "ali.ohhb@gmail.com"
           remote_branch: "main"
+      env:
+        HD_DbUri: ${{secrets.DbUri}}
+        HD_DbName: ${{secrets.DbName}}
+        HD_MFS: ${{secrets.MFS}}
+        HD_MRS: ${{secrets.MRS}}
+        HD_jwtExpirationInMs: ${{secrets.jwtExpirationInMs}}
+        HD_jwtSecret: ${{secrets.jwtSecret}}
+        HD_refreshTokenExpirationInMs: ${{secrets.refreshTokenExpirationInMs}}
+        HD_refreshTokenSecret: ${{secrets.refreshTokenSecret}}    
     env:
       DbUri: ${{secrets.DbUri}}
       DbName: ${{secrets.DbName}}
