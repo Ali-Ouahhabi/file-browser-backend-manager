@@ -1,0 +1,19 @@
+spring:
+  mongodb:
+    uri: ${DbUri}
+    database: ${DbName}
+
+spring: 
+  servlet:
+    multipart:
+      max-file-size: ${MFS}
+      max-request-size: ${MRS}
+
+api:
+  prefix: "/api/v1"
+
+jwtExpirationInMs: ${jwtExpirationInMs}
+jwtSecret: ${jwtSecret}
+
+refreshTokenExpirationInMs: ${refreshTokenExpirationInMs}
+refreshTokenSecret: ${refreshTokenSecret}
