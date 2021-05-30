@@ -23,12 +23,12 @@ jobs:
         distribution: 'adopt'
     - name: Build with Maven
       run: mvn -B package --file pom.xml
-      env:
-        DbUri :${{secrets.DbUri}}
-        DbName :${{secrets.DbName}}
-        MFS :${{secrets.MFS}}
-        MRS :${{secrets.MRS}}
-        jwtExpirationInMs :${{secrets.jwtExpirationInMs}}
-        jwtSecret :${{secrets.jwtSecret}}
-        refreshTokenExpirationInMs :${{secrets.refreshTokenExpirationInMs}}
-        refreshTokenSecret :${{secrets.refreshTokenSecret}}
+    env:
+      DbUri: ${{secrets.DbUri}}
+      DbName: ${{secrets.DbName}}
+      MFS: ${{secrets.MFS}}
+      MRS: ${{secrets.MRS}}
+      jwtExpirationInMs: ${{secrets.jwtExpirationInMs}}
+      jwtSecret: ${{secrets.jwtSecret}}
+      refreshTokenExpirationInMs: ${{secrets.refreshTokenExpirationInMs}}
+      refreshTokenSecret: ${{secrets.refreshTokenSecret}}
