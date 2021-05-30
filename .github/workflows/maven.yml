@@ -23,6 +23,12 @@ jobs:
         distribution: 'adopt'
     - name: Build with Maven
       run: mvn -B package --file pom.xml -Dmaven.test.skip=true
+    - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
+      with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "dscp" #Must be unique in Heroku
+          heroku_email: "ali.ohhb@gmail.com"
+          remote_branch: "main"
     env:
       DbUri: ${{secrets.DbUri}}
       DbName: ${{secrets.DbName}}
@@ -32,3 +38,4 @@ jobs:
       jwtSecret: ${{secrets.jwtSecret}}
       refreshTokenExpirationInMs: ${{secrets.refreshTokenExpirationInMs}}
       refreshTokenSecret: ${{secrets.refreshTokenSecret}}
+
