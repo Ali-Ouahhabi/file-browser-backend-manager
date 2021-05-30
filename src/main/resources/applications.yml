@@ -3,7 +3,6 @@ spring:
     uri: ${DbUri}
     database: ${DbName}
 
-spring: 
   servlet:
     multipart:
       max-file-size: ${MFS}
