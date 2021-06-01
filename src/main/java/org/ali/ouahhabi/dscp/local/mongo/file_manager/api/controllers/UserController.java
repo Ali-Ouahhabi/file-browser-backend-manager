@@ -36,12 +36,6 @@ public class UserController {
 	@Autowired
 	UserService userService;
 
-	@Autowired
-	private RefreshTokenAuthenticationService refreshTokenAuthenticationService;
-	
-	@Autowired
-	private TokenAuthenticationService tokenAuthenticationService;
-
 	@RequestMapping(value = "/register", method = RequestMethod.POST)
 	public ResponseEntity register(@RequestBody UserRegister user) {
 
@@ -67,9 +61,7 @@ public class UserController {
 
 	@RequestMapping("/logout")
 	public ResponseEntity logout(HttpServletRequest request) {
-		String email = tokenAuthenticationService.getPrincipale(request);
-		boolean logout = email != null?userService.logoutUser(email):false;
-		if (logout)
+		if (userService.logoutUser(request))
 			return ResponseEntity.ok("");
 		else
 			return ResponseEntity.notFound().build();
@@ -77,9 +69,8 @@ public class UserController {
 
 	@RequestMapping("/refresh")
 	public ResponseEntity<String> refresh(HttpServletRequest request) {
-		Authentication u = refreshTokenAuthenticationService.getAuthentication(request);
 		try {
-			return ResponseEntity.ok(userService.authenticate(u));
+			return ResponseEntity.ok(userService.refresh(request));
 		} catch (Exception e) {
 			Logger.getLogger(UserController.class.getName()).log(Level.SEVERE, null, e);
 			return ResponseEntity.status(409).body(e.getMessage());
