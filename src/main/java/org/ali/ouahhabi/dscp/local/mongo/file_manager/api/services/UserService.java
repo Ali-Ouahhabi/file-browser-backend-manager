@@ -11,11 +11,17 @@ import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authenticatio
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.controllers.UserController;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.UsernamePasswordAuthentication;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.services.RefreshTokenAuthenticationService;
 import org.ali.ouahhabi.dscp.local.mongo.file_manager.api.security.authentications.services.TokenAuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -73,9 +79,15 @@ public class UserService {
     	return tokenAuthenticationService.generateToken(user); 
     } 
     
-    public boolean logoutUser(String email) {
-        return userDao.deleteUserSessions(email);
+    public boolean logoutUser(HttpServletRequest request) {
+    	String email = tokenAuthenticationService.getPrincipale(request);
+        return email != null?userDao.deleteUserSessions(email):false;
     }
     
+    public String refresh(HttpServletRequest request) throws Exception {
+		return this.authenticate(
+				refreshTokenAuthenticationService.getAuthentication(request));
+		
+	}
     
 }
