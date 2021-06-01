@@ -103,18 +103,20 @@ public class FilesService {
 	}
 
 	private File zipFiles(GridFSFindIterable files) throws FileNotFoundException, IOException {
+		
 
 		Path tempFile = Files.createTempFile("compressesd", ".zip");
-
 		FileOutputStream fos = new FileOutputStream(tempFile.toFile());
 		ZipOutputStream zipOut = new ZipOutputStream(fos);
 		GridFsResource fsResource;
 		for (GridFSFile srcFile : files) {
 			fsResource = this.filesDao.download(srcFile);
+			Document metta = srcFile.getMetadata();
 
 			InputStream fis = fsResource.getInputStream();
+			String path = metta.getString("path")+metta.getString("name");
 			try {
-				ZipEntry zipEntry = new ZipEntry(srcFile.getFilename());
+				ZipEntry zipEntry = new ZipEntry(path);
 				zipOut.putNextEntry(zipEntry);
 			} catch (Exception e) {
 				ZipEntry zipEntry = new ZipEntry("0_" + srcFile.getFilename());
