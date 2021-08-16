@@ -60,6 +60,8 @@ public class FilesController {
 	public ResponseEntity<String> listAll() {
 		return ResponseEntity.ok(this.filesService.findAll());
 	}
+	
+	//TODO: check for duplicate name or path
 
 	@RequestMapping(value = "/uploads", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<String>upload(@RequestPart(value = "files") MultipartFile[] files,
@@ -80,12 +82,18 @@ public class FilesController {
 			return this.downloadAll(req.getPath(), req.getName());
 	}
 
+	//TODO: check for duplicate name or path
+
+	
 	@PostMapping("/rename")
 	public ResponseEntity<Boolean> rename(@RequestBody RenameReq req) {
 		if(req.isFile()) 
 			return ResponseEntity.ok(filesService.renameFile(req.getPath(),req.getName(),req.getNewName()));
 		return ResponseEntity.ok(filesService.renameFolder(req.getPath(),req.getNewPath()));
 	}
+	
+	//TODO: check for duplicate name or path
+
 	
 	@PostMapping("/move")
 	public ResponseEntity<Boolean> move(@RequestBody MoveReq req) {
