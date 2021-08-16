@@ -52,9 +52,7 @@ public class FilesService {
 	}
 
 	public String findAll() {
-		String UserId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		String result = this.filesDao.initUserFiles(UserId);
-		return result;
+		return this.filesDao.initUserFiles(this.getUser());
 	}
 
 	public String upload(MultipartFile[] files, FileModel[] metadata) throws Exception {
