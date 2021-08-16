@@ -67,7 +67,7 @@ public class UserController {
 		if (userService.logoutUser(request))
 			return ResponseEntity.ok("");
 		else
-			return ResponseEntity.notFound().build();
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 	}
 
 	@RequestMapping("/refresh")
