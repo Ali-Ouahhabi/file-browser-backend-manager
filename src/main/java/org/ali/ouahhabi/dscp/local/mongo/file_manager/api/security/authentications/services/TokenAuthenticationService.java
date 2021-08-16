@@ -60,7 +60,7 @@ public class TokenAuthenticationService {
 
 	public String getPrincipale(HttpServletRequest request) {
 		String token = request.getHeader(HEADER_STRING);
-		if (token != null)
+		if (token != null && !token.isEmpty())
 			try {
 				return getUserAuthority(token)[0];
 			} catch (ExpiredJwtException e) {

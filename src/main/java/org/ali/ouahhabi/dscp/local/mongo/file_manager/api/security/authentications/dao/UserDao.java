@@ -58,11 +58,10 @@ public class UserDao {
 
     public boolean addUser(UserRegister user) throws Exception {
         if (getUser(user.getEmail()) == null) {
-            usersCollection.find();
             InsertOneResult insertOne = usersCollection.insertOne(user);
             return insertOne.wasAcknowledged();
         } else {
-            throw new Exception("user email alerady exist");
+            throw new Exception("dupKey");
         }
     }
 

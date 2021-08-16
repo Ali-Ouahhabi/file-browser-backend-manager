@@ -64,10 +64,8 @@ public class RefreshTokenAuthenticationService {
     
     public Authentication getAuthentication(HttpServletRequest request) {
         String token = request.getHeader(HEADER_STRING);
-        if (token != null) return getAuthenticationUser(token);
+        if (token != null && !token.isEmpty()) return getAuthenticationUser(token);
         return null;
     }
-    
- 
-    
+       
 }

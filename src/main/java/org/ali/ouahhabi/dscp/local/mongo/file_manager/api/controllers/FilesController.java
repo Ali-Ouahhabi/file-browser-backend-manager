@@ -62,7 +62,6 @@ public class FilesController {
 	}
 
 	@RequestMapping(value = "/uploads", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	// , consumes = )
 	public ResponseEntity<String>upload(@RequestPart(value = "files") MultipartFile[] files,
 			@RequestPart(value = "metadata") FileModel[] metadata) throws IOException {
 		try {
@@ -138,7 +137,6 @@ public class FilesController {
 					.body(new InputStreamResource(new FileInputStream(resp)));
 
 		} catch (IOException ex) {
-
 			Logger.getLogger(FilesController.class.getName()).log(Level.SEVERE, null, ex);
 
 			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);

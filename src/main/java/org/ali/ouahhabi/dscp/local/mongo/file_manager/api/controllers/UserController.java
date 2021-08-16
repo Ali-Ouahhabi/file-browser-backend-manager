@@ -5,6 +5,8 @@
  */
 package org.ali.ouahhabi.dscp.local.mongo.file_manager.api.controllers;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,7 +39,7 @@ public class UserController {
 	UserService userService;
 
 	@RequestMapping(value = "/register", method = RequestMethod.POST)
-	public ResponseEntity register(@RequestBody UserRegister user) {
+	public ResponseEntity<Map<String, String>> register(@RequestBody UserRegister user) {
 
 		try {
 			userService.addUser(user);
@@ -45,17 +47,17 @@ public class UserController {
 			return login(user_);
 		} catch (Exception ex) {
 			Logger.getLogger(UserController.class.getName()).log(Level.SEVERE, null, ex);
-			return ResponseEntity.status(409).body(ex.getMessage());
+			return ResponseEntity.status(409).body(Map.of("msg",ex.getMessage()));
 		}
 	}
 
 	@RequestMapping("/login")
-	public ResponseEntity login(@RequestBody User user) {
+	public ResponseEntity<Map<String,String>> login(@RequestBody User user) {
 		try {
 			return ResponseEntity.ok(userService.authenticate(user));
 		} catch (Exception ex) {
 			Logger.getLogger(UserController.class.getName()).log(Level.SEVERE, null, ex);
-			return ResponseEntity.status(500).body("Internal Server ERROR");
+			return ResponseEntity.status(500).body(Map.of("msg","Internal Server ERROR"));
 		}
 	}
 

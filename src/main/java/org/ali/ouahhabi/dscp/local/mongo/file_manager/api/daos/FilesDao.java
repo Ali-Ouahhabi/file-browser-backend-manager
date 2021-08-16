@@ -69,7 +69,6 @@ public class FilesDao {
 	}
 
 	public ObjectId upload(InputStream in, GridFSUploadOptions options) throws Exception {
-		String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 		if (!options.getMetadata().containsKey("name") || !options.getMetadata().containsKey("path")
 				|| !options.getMetadata().containsKey("size") || !options.getMetadata().containsKey("type")) {
 			throw new Exception("Metadata must include filename path ancestors ");
@@ -105,7 +104,6 @@ public class FilesDao {
 	}
 	
 	public boolean move(String userId, String name, String from, String to) {
-		// get fs.file and set upadate
 		Bson filter;
 		if (name != null) {
 			filter = and(eq("metadata.userId", userId), eq("metadata.name", name), regex("metadata.path", "^" + from));
