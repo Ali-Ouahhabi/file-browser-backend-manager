@@ -40,12 +40,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * @email ali.ohhb@gmail.com
  */
 
-
 @Configuration
 public class FilesDao {
 
 	private GridFSBucket gridFSBucket;
 	private MongoCollection<Document> filesCollection;
+
+	// TODO: for all tryNext ad a catch exception with what to return
 
 	@Autowired
 	FilesDao(MongoClient mongoClient, @Value("${spring.mongodb.database}") String database) {
@@ -102,7 +103,7 @@ public class FilesDao {
 				.wasAcknowledged();
 
 	}
-	
+
 	public boolean move(String userId, String name, String from, String to) {
 		Bson filter;
 		if (name != null) {
@@ -125,9 +126,9 @@ public class FilesDao {
 		Bson filter;
 		filter = and(eq("metadata.userId", userId), eq("metadata.name", name), eq("metadata.path", path));
 
-		ObjectId id = filesCollection.find(filter).projection(include("_id")).iterator().tryNext().getObjectId("_id");
-
-		gridFSBucket.delete(id);
+		filesCollection.find(filter).projection(include("_id")).forEach((doc) -> {
+			gridFSBucket.delete(doc.getObjectId("_id"));
+		});
 	}
 
 	public void removeFolder(String path, String userId) {
@@ -140,8 +141,6 @@ public class FilesDao {
 
 	}
 
-	
-	
 	public GridFSFile findByName(String name) {
 		return gridFSBucket.find(eq("metadata.filename", name)).iterator().tryNext();
 	}
