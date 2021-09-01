@@ -58,7 +58,7 @@ public class UserController {
 			return ResponseEntity.ok(userService.authenticate(user));
 		} catch (Exception ex) {
 			Logger.getLogger(UserController.class.getName()).log(Level.SEVERE, null, ex);
-			return ResponseEntity.status(500).body(Map.of("msg","Internal Server ERROR"));
+			return ResponseEntity.status(401).body(Map.of("msg","Internal Server ERROR"));
 		}
 	}
 

@@ -29,12 +29,14 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
  */
 @Configuration
 public class WebConfig extends WebSecurityConfigurerAdapter {
-
-    @Autowired
-    UsernamePasswordAuthenticationProvider usernamePasswordAuthenticationProvider;
+	
     
     @Value("${api.prefix}")
     String api;
+
+    @Autowired
+    UsernamePasswordAuthenticationProvider usernamePasswordAuthenticationProvider;
+
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {

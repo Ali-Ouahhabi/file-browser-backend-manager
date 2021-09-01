@@ -101,7 +101,7 @@ public class FilesService {
 	}
 
 	private File zipFiles(GridFSFindIterable files) throws FileNotFoundException, IOException {
-		
+		// if you want to remove the useless folder pointing from the root, subString the requested path from files paths    
 
 		Path tempFile = Files.createTempFile("compressesd", ".zip");
 		FileOutputStream fos = new FileOutputStream(tempFile.toFile());
